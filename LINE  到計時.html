@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下班儀式感</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --accent-green: #00ff88;
+            --accent-red: #ff4b2b;
+            --accent-blue: #00d2ff;
+            --text-main: #ffffff;
+        }
+
+        body { 
+            margin: 0; padding: 0; 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 漸層動態背景 */
+        .bg-glow {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 20% 30%, #1a1a2e 0%, #050505 100%);
+        }
+
+        .container {
+            width: 85%; max-width: 340px;
+            padding: 50px 25px;
+            border-radius: 45px;
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            position: relative;
+        }
+
+        .status-badge {
+            display: inline-block; padding: 8px 20px; border-radius: 50px;
+            font-size: 0.8rem; font-weight: 600; letter-spacing: 2px;
+            margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.5s;
+        }
+
+        #timer {
+            font-size: 3.8rem; font-weight: 100; line-height: 1.2;
+            margin: 15px 0; font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+        }
+
+        .quote-box {
+            height: 60px; margin-bottom: 35px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #quote {
+            font-size: 0.95rem; color: #aaa; line-height: 1.6;
+            font-style: italic;
+        }
+
+        /* 按鈕設計 */
+        .btn-group { display: flex; flex-direction: column; gap: 15px; }
+
+        .btn {
+            width: 100%; padding: 18px; border-radius: 25px;
+            border: none; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; transition: 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+            color: white;
+        }
+
+        #offWorkBtn {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            box-shadow: 0 10px 20px rgba(255, 65, 108, 0.3);
+        }
+
+        #holidayBtn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #eee;
+        }
+
+        .btn:hover { transform: translateY(-3px); }
+        #offWorkBtn:hover { box-shadow: 0 15px 30px rgba(255, 65, 108, 0.5); }
+        .btn:active { transform: scale(0.97); }
+
+        .hidden { display: none !important; }
+
+        /* 模式特定色彩 */
+        .mode-slave { border: 1px solid var(--accent-red); }
+        .mode-free { border: 1px solid var(--accent-blue); }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <div class="container" id="mainCard">
+        <div id="statusBadge" class="status-badge">系統初始化</div>
+        <div id="timer">00:00:00</div>
+        
+        <div class="quote-box">
+            <p id="quote">「 正在加載生活意義... 」</p>
+        </div>
+        
+        <div class="btn-group">
+            <button id="offWorkBtn" class="btn hidden" onclick="confirmOffWork()">啟動下班程序</button>
+            <button id="holidayBtn" class="btn" onclick="confirmHoliday()">今日無需勞動</button>
+        </div>
+    </div>
+
+    <script>
+        const texts = {
+            work: {
+                badge: "🌱 努力工作中",
+                quotes: ["工作不是人生的全部，下班才是。", "自由的靈魂不該被辦公桌囚禁。", "再撐一下，美好的夜晚即將開始。"]
+            },
+            slave: {
+                badge: "⚠️ 加班警報",
+                quotes: ["偵測到過度勞動，請立即停止。", "這世界少了你這半小時不會毀滅。", "老闆的賓士，有你的一份努力。"]
+            },
+            free: {
+                badge: "💎 自由身分",
+                quotes: ["恭喜！你已成功回到現實世界。", "現在，去做你想做的任何事。", "工作模式已卸載，請享受純粹。"]
+            }
+        };
+
+        function update() {
+            const now = new Date();
+            const timeVal = now.getHours() * 100 + now.getMinutes();
+            const today = now.toDateString();
+
+            // 換日檢查
+            if (localStorage.getItem('savedDate') !== today) {
+                localStorage.clear();
+                localStorage.setItem('savedDate', today);
+            }
+
+            const isOff = localStorage.getItem('isOff') === 'true';
+            const isHoli = localStorage.getItem('isHoli') === 'true';
+
+            const badge = document.getElementById("statusBadge");
+            const timer = document.getElementById("timer");
+            const quote = document.getElementById("quote");
+            const offBtn = document.getElementById("offWorkBtn");
+            const holiBtn = document.getElementById("holidayBtn");
+
+            if (isOff || isHoli) {
+                badge.innerText = isHoli ? "🏖️ 度假模式" : texts.free.badge;
+                badge.style.color = "var(--accent-blue)";
+                timer.innerText = "自由";
+                timer.style.color = "var(--accent-blue)";
+                quote.innerText = texts.free.quotes[0];
+                offBtn.classList.add("hidden");
+                holiBtn.classList.add("hidden");
+            } 
+            else if (timeVal >= 1800) {
+                badge.innerText = texts.slave.badge;
+                badge.style.color = "var(--accent-red)";
+                let target = new Date(); target.setHours(18,0,0,0);
+                timer.innerText = format(now - target);
+                timer.style.color = "var(--accent-red)";
+                quote.innerText = texts.slave.quotes[0];
+                offBtn.classList.remove("hidden");
+                holiBtn.classList.add("hidden");
+            } 
+            else {
+                badge.innerText = texts.work.badge;
+                badge.style.color = "var(--accent-green)";
+                let target = new Date(); target.setHours(18,0,0,0);
+                timer.innerText = format(target - now);
+                timer.style.color = "white";
+                quote.innerText = texts.work.quotes[0];
+                offBtn.classList.add("hidden");
+                holiBtn.classList.remove("hidden");
+            }
+        }
+
+        function format(ms) {
+            const h = Math.floor((ms / 3600000) % 24).toString().padStart(2, '0');
+            const m = Math.floor((ms / 60000) % 60).toString().padStart(2, '0');
+            const s = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function confirmOffWork() {
+            // 華麗噴泉效果
+            var duration = 3 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+              confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#00d2ff', '#ffffff'] });
+              confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#00d2ff', '#ffffff'] });
+              if (Date.now() < end) { requestAnimationFrame(frame); }
+            }());
+
+            localStorage.setItem('isOff', 'true');
+            setTimeout(update, 1000);
+        }
+
+        function confirmHoliday() {
+            if(confirm("切換至休假狀態？今日將鎖定為自由模式。")) {
+                localStorage.setItem('isHoli', 'true');
+                update();
+            }
+        }
+
+        setInterval(update, 1000);
+        update();
+    </script>
+</body>
+</html>
