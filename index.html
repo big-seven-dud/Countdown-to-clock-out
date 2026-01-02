@@ -3,95 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>社畜救贖儀式</title>
+    <title>登出社會程序</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg: #000000;
-            --card: #121212;
-            --accent: #BB86FC;
-            --danger: #CF6679;
-            --success: #03DAC6;
-            --text: #E1E1E1;
+            --card: #111111;
+            --accent: #bb86fc;
+            --danger: #ff4d4d;
+            --success: #00ff88;
+            --text: #ffffff;
         }
 
         body {
             margin: 0; background: var(--bg); color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             display: flex; align-items: center; justify-content: center; height: 100vh;
         }
 
         .container {
-            width: 90%; max-width: 360px; padding: 40px 20px;
-            background: var(--card); border-radius: 32px;
-            text-align: center; border: 1px solid #333;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            width: 85%; max-width: 380px; padding: 50px 20px;
+            background: var(--card); border-radius: 40px;
+            text-align: center; border: 1px solid #222;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
         }
 
-        .status-dot {
+        .status-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            font-size: 0.85rem; color: #888; margin-bottom: 20px;
+            font-size: 0.75rem; color: #666; margin-bottom: 30px;
+            padding: 5px 15px; border-radius: 20px; border: 1px solid #333;
         }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
-        .dot.active { background: var(--success); box-shadow: 0 0 10px var(--success); }
 
         #timer {
-            font-size: 4.5rem; font-weight: 800; margin: 10px 0;
-            letter-spacing: -3px; font-variant-numeric: tabular-nums;
+            font-size: 3.8rem; font-weight: 200; margin: 15px 0;
+            letter-spacing: -1px; font-variant-numeric: tabular-nums;
+            font-family: 'Courier New', Courier, monospace; /* 使用等寬字體防止數字抖動 */
         }
 
-        .quote { font-size: 1rem; color: #aaa; min-height: 50px; margin-bottom: 30px; line-height: 1.5; }
+        .quote { font-size: 0.9rem; color: #888; min-height: 40px; margin-bottom: 40px; }
 
+        .btn-group { display: flex; flex-direction: column; gap: 12px; }
         .btn {
-            width: 100%; padding: 16px; border-radius: 16px; border: none;
-            font-size: 1rem; font-weight: 700; cursor: pointer;
-            transition: 0.2s; margin-bottom: 12px;
+            width: 100%; padding: 18px; border-radius: 20px; border: none;
+            font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.3s;
         }
-        .btn-primary { background: white; color: black; }
-        .btn-outline { background: transparent; border: 1px solid #444; color: #ccc; }
-        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--text); color: var(--bg); }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .btn:active { transform: scale(0.95); }
 
-        /* 設定框 */
-        .settings { font-size: 0.8rem; color: #555; margin-top: 20px; text-decoration: underline; cursor: pointer; }
-        .hidden { display: none; }
+        .settings { font-size: 0.75rem; color: #444; margin-top: 25px; cursor: pointer; text-decoration: underline; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="status-dot">
-        <div class="dot active" id="dotIcon"></div>
-        <span id="statusText">系統正常運行</span>
+    <div class="status-badge">
+        <span id="statusText">系統待命</span>
     </div>
     
-    <div id="timer">00:00</div>
+    <div id="timer">00:00:00</div>
     
-    <div class="quote" id="quote">「 正在思考要點哪家外送... 」</div>
+    <div class="quote" id="quote">正在讀取今日剩餘能量...</div>
 
     <div class="btn-group">
-        <button id="offWorkBtn" class="btn btn-primary" onclick="finishWork()">👋 登出社會 (下班)</button>
-        <button id="extraWorkBtn" class="btn btn-outline hidden" onclick="startExtraWork()">💀 被迫加班 (外派)</button>
-        <button id="holidayBtn" class="btn btn-outline" onclick="setHoliday()">🏖️ 今日放假</button>
+        <button id="offWorkBtn" class="btn btn-primary hidden" onclick="finishWork()">🚀 啟動下班程序</button>
+        <button id="extraWorkBtn" class="btn btn-outline hidden" onclick="startExtraWork()">💀 接受外派加班</button>
+        <button id="holidayBtn" class="btn btn-outline" onclick="setHoliday()">🏖️ 今天沒我的事</button>
     </div>
 
-    <div class="settings" onclick="adjustTime()">調整今日下班時間</div>
+    <div class="settings" onclick="adjustTime()">修改下班時間 (目前: <span id="timeLabel">18:15</span>)</div>
 </div>
 
 <script>
-    let customTime = localStorage.getItem('offTime') || "18:15";
-    
+    let offTime = localStorage.getItem('offTime') || "18:15";
+    document.getElementById('timeLabel').innerText = offTime;
+
     const quotes = {
-        work: ["別看我，看螢幕。", "薪水是精神損失費。", "今天的我依然在替老闆換跑車。"],
-        slave: ["加班只有 0 次跟無數次。", "老闆沒走，我的靈魂也走不了。", "這種生活，狗看了都搖頭。"],
-        free: ["自由的空氣真甜。", "已開啟不讀不回模式。", "今晚的目標是睡到自然醒。"],
-        weekend: ["週末愉快，希望別看到 LINE 群組。"]
+        work: ["只要我不努力，老闆就沒法過想要的生活。", "薪水不是工資，是精神損失補償。", "距離自由已進入倒數階段。"],
+        slave: ["偵測到非法加班...系統過熱中。", "生命正以秒為單位流向公司。", "這種苦我吃得消，但不想吃。"],
+        free: ["登出成功。請盡情享受人類生活。", "別看螢幕了，去看星星吧。", "今日勞動力已全數售罄。"],
+        weekend: ["週末愉快！希望 LINE 群組永遠安靜。", "偵測到例假日。建議進入斷網模式。"]
     };
 
     function update() {
         const now = new Date();
-        const day = now.getDay(); // 0: 日, 6: 六
+        const day = now.getDay(); 
         const isWeekend = (day === 0 || day === 6);
-        const [offH, offM] = customTime.split(":").map(Number);
+        const [h, m] = offTime.split(":").map(Number);
         
         const isOff = localStorage.getItem('isOff') === 'true';
         const isHoli = localStorage.getItem('isHoli') === 'true';
@@ -99,18 +98,17 @@
 
         const timerEl = document.getElementById('timer');
         const quoteEl = document.getElementById('quote');
-        const dot = document.getElementById('dotIcon');
         const statusEl = document.getElementById('statusText');
         const offBtn = document.getElementById('offWorkBtn');
         const extraBtn = document.getElementById('extraWorkBtn');
         const holiBtn = document.getElementById('holidayBtn');
 
-        // 1. 週末模式 (且沒被強制加班)
+        // 1. 週末模式
         if (isWeekend && !forceWork) {
             timerEl.innerText = "CHILL";
+            timerEl.style.color = "var(--accent)";
             quoteEl.innerText = quotes.weekend[0];
-            dot.style.background = "var(--accent)";
-            statusEl.innerText = "週末耍廢中";
+            statusEl.innerText = "✨ 週末例假休息中";
             offBtn.classList.add('hidden');
             holiBtn.classList.add('hidden');
             extraBtn.classList.remove('hidden');
@@ -119,10 +117,10 @@
 
         // 2. 自由模式 (已下班或今日放假)
         if (isOff || isHoli) {
-            timerEl.innerText = "DONE";
-            quoteEl.innerText = quotes.free[0];
-            dot.style.background = "var(--accent)";
-            statusEl.innerText = "自由身";
+            timerEl.innerText = "FREE";
+            timerEl.style.color = "var(--accent)";
+            quoteEl.innerText = quotes.free[Math.floor(Math.random()*quotes.free.length)];
+            statusEl.innerText = "🔋 自由能量滿格";
             offBtn.classList.add('hidden');
             holiBtn.classList.add('hidden');
             extraBtn.classList.add('hidden');
@@ -131,43 +129,43 @@
 
         // 3. 工作或加班模式
         let target = new Date();
-        target.setHours(offH, offM, 0, 0);
+        target.setHours(h, m, 0, 0);
         
         if (now >= target) {
-            // 超時加班
-            timerEl.innerText = formatDiff(now - target);
+            // 已過下班時間（加班中）
+            timerEl.innerText = formatHMS(now - target);
             timerEl.style.color = "var(--danger)";
             quoteEl.innerText = quotes.slave[Math.floor(Math.random()*quotes.slave.length)];
-            statusEl.innerText = "正在被社會毒打";
-            dot.style.background = "var(--danger)";
+            statusEl.innerText = "🚨 偵測到超時勞動";
             offBtn.classList.remove('hidden');
             holiBtn.classList.add('hidden');
         } else {
             // 倒數下班
-            timerEl.innerText = formatDiff(target - now);
-            timerEl.style.color = "white";
+            timerEl.innerText = formatHMS(target - now);
+            timerEl.style.color = "var(--text)";
             quoteEl.innerText = quotes.work[Math.floor(Math.random()*quotes.work.length)];
-            statusEl.innerText = `預計 ${customTime} 下班`;
-            dot.style.background = "var(--success)";
+            statusEl.innerText = `⚙️ 距離 ${offTime} 登出`;
             offBtn.classList.add('hidden');
             holiBtn.classList.remove('hidden');
         }
+        extraBtn.classList.add('hidden');
     }
 
-    function formatDiff(ms) {
-        let m = Math.floor(ms / 60000);
-        let s = Math.floor((ms % 60000) / 1000);
-        return `${m}:${s.toString().padStart(2, '0')}`;
+    function formatHMS(ms) {
+        let hrs = Math.floor(ms / 3600000);
+        let mins = Math.floor((ms % 3600000) / 60000);
+        let secs = Math.floor((ms % 60000) / 1000);
+        return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
     function finishWork() {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
         localStorage.setItem('isOff', 'true');
         update();
     }
 
     function setHoliday() {
-        if(confirm("確定今天不勞動？")) {
+        if(confirm("確定啟動放假模式？")) {
             localStorage.setItem('isHoli', 'true');
             update();
         }
@@ -179,15 +177,18 @@
     }
 
     function adjustTime() {
-        const time = prompt("今日幾點解放？(格式 24h, 如 18:15)", customTime);
-        if (time) {
+        const time = prompt("今日幾點下班？(例如 18:15)", offTime);
+        if (time && /^([01]\d|2[0-3]):?([0-5]\d)$/.test(time)) {
             localStorage.setItem('offTime', time);
-            customTime = time;
+            offTime = time;
+            document.getElementById('timeLabel').innerText = offTime;
             update();
+        } else if (time) {
+            alert("請輸入正確的格式 (例如 18:15)");
         }
     }
 
-    // 每天重置
+    // 換日自動重置
     const today = new Date().toDateString();
     if (localStorage.getItem('lastDate') !== today) {
         localStorage.clear();
